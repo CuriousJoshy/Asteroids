@@ -154,12 +154,12 @@ Game.world = (function(){
                     e.update(dt);
                 }
                 
-                if(this.noCollision != true && Game.grid && entities.indexOf(e) != -1)
+                if(Game.grid && entities.indexOf(e) != -1)
                 {
                     if(!e.noSpatialHash)
                         Game.grid.refresh(e);
                     
-                    if(!e.noCollisionCheck && e.collisionCheck)
+                    if(this.noCollision != true && !e.noCollisionCheck && e.collisionCheck)
                     {
                         if(e.unfilteredSearch)
                             Game.grid.searchUnfiltered(e, e.collisionCheck, e);

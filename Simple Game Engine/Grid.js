@@ -132,13 +132,13 @@ Game.grid = {
         
         let unfiltered = this.searchUnfiltered(area), result = [], e, rect;
         
-        area = area.rect || area;
+        area = area.polygon || area.rect || area;
         
         for(var i = 0, l = unfiltered.length; i < l; i++)
         {
             e = unfiltered[i];
             
-            rect = e.rect || e;
+            rect = e.polygon || e.rect || e;
 
             if(rect.x + rect.w >= area.x && rect.x <= area.x + area.w && rect.y + rect.h >= area.y && rect.y <= area.y + area.h)
             {

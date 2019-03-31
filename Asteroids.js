@@ -322,9 +322,9 @@ Game.entity.define("Asteroid", {
     worldAdd: function()
     {
         let position = this.position;
-        
+        		
         if(position)
-        {
+        {			
             this.position = position;
             this.polygon.moveTo(position);
 			this.positioned = true;
@@ -340,13 +340,11 @@ Game.entity.define("Asteroid", {
         player = this.world.get("Spaceship")[0];
                         
         this.position = Game.vector(Game.random(stage.width), Game.random(stage.height));
-        
-        if(player && this.position.distanceTo(player.position) < 175 && ++this.timesRepositioned < 1000)
+				
+        if(player && ++this.timesRepositioned < 10000 && this.position.distanceTo(player.position) < 175)
             this.randomPosition();
-		else if(!this.positioned)
-			this.timesRepositioned = 0;
         else
-		{
+		{			
             polygon.moveTo(this.position);
 			this.positioned = true;
 		}
@@ -418,7 +416,7 @@ Game.entity.define("Asteroid", {
     },
     
     update: function(dt)
-    {
+    {		
         this.move(dt);
     },
     
@@ -478,9 +476,9 @@ Game.entity.define("Alien", {
         
 		this.verticalDirection = Game.random.item([-1, 1]);
 		
-        if(Game.grid.searchUnfiltered(this).length != 0 && ++this.timesRepositioned < 100)
+        if(Game.grid.searchUnfiltered(this).length != 0 && ++this.timesRepositioned < 1000)
             this.randomPosition();
-        else if(!this.posititioned)
+        else if(this.timesRepositioned >= 1000)
 			this.timesRepositioned = 0;
 		else
 		{
@@ -512,7 +510,7 @@ Game.entity.define("Alien", {
 			{
 				e = nearby[i];
 				
-				if(e == this || e.is("Bullet"))
+				if(e == this || e.is("Bullet") || e.is("Alien"))
 					continue;
 				
 				distance = bulletPos.distanceTo(e.position, true);
@@ -528,10 +526,7 @@ Game.entity.define("Alien", {
 				angle = bulletPos.angleTo(Game.vector(closest.position).add(closest.rect.w / 2, closest.rect.h / 2)) * 180 / Math.PI + 90;			
 		}
 		
-		if(angle == null)
-			angle = Game.random(360);
-		
-		this.world.add(Game.entity.create("Alien Bullet", bulletPos, Game.vector(0, 0), angle));
+		this.world.add(Game.entity.create("Alien Bullet", bulletPos, Game.vector(0, 0), (angle != null && angle) || Game.random(360)));
 	},
 	
 	collisionCheck: function(e)
@@ -830,9 +825,7 @@ Game.state.add("Game Over Screen", {
     },
     
     exit: function()
-    {
-        Scoreboard.reset();
-		
+    {		
 		Game.world.current.noCollision = false;
     }
 });
@@ -880,6 +873,8 @@ Game.world.add("Asteroids", {
         
     enter: function(lastState)
     {        
+		Scoreboard.reset();
+	
         this.add(Game.entity.create("Spaceship"));
         
         this.nextRound();
