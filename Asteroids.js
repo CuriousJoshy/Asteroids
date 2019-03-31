@@ -19,16 +19,16 @@ Game.polygon.fromSVG("M 0 6 L 12 6 L 18 0 L 24 6 L 30 18 L 24 30 L 18 18 L 12 24
 Game.polygon.fromSVG("M 4 3 L 13 3 L 17 0 L 33 0 L 38 3 L 46 3 L 50 5 L 0 5 L 4 3 L 46 3 L 50 5 L 46 8 L 38 8 L 33 10 L 17 10 L 13 8 L 4 8 L 0 5 L 4 8 L 46 8", "Alien");
 Game.polygon.fromSVG("M 0 0 L 5 0", "Alien Bullet");
 
-var keys = Game.input.keys, mouse = Game.input.mouse;
+var keys = Game.input.keys;
 
 Game.entity.define("Spaceship", {
-    speed: 5,
-    maxSpeed: 360,
+    speed: 12,
+    maxSpeed: 300,
     
     turnSpeed: 360,
     rotation: 0,
     
-    fireRate: 5,
+    fireRate: 6,
     fireDelta: 0,
     
     killed: false,
@@ -314,6 +314,9 @@ Game.entity.define("Asteroid", {
         this.rotationSpeed = this.baseRotationSpeed + this.rotationSpeedScale * value;
                 
         this.polygon = Game.polygon.create("Asteroid " + this.size);
+		
+		this.positioned = false;
+		this.timesRepositioned = 0;
     },
     
     worldAdd: function()
@@ -324,6 +327,7 @@ Game.entity.define("Asteroid", {
         {
             this.position = position;
             this.polygon.moveTo(position);
+			this.positioned = true;
         }
         else
             this.randomPosition();  
@@ -337,10 +341,15 @@ Game.entity.define("Asteroid", {
                         
         this.position = Game.vector(Game.random(stage.width), Game.random(stage.height));
         
-        if(player && this.position.distanceTo(player.position) < 175)
+        if(player && this.position.distanceTo(player.position) < 175 && ++this.timesRepositioned < 1000)
             this.randomPosition();
+		else if(!this.positioned)
+			this.timesRepositioned = 0;
         else
+		{
             polygon.moveTo(this.position);
+			this.positioned = true;
+		}
     },
     
     move: function(dt)
@@ -445,6 +454,9 @@ Game.entity.define("Alien", {
 		
 		this.position = Game.vector(0, 0);
 		this.velocity = Game.vector(0, 0);
+		
+		this.positioned = false;
+		this.timesRepositioned = 0;
     },
     
     worldAdd: function()
@@ -466,10 +478,15 @@ Game.entity.define("Alien", {
         
 		this.verticalDirection = Game.random.item([-1, 1]);
 		
-        if(Game.grid.searchUnfiltered(this).length != 0)
+        if(Game.grid.searchUnfiltered(this).length != 0 && ++this.timesRepositioned < 100)
             this.randomPosition();
-        else
+        else if(!this.posititioned)
+			this.timesRepositioned = 0;
+		else
+		{
             this.polygon.moveTo(position);
+			this.positioned = true;
+		}
     },
 	
 	shoot: function()
@@ -848,21 +865,19 @@ Game.world.add("Asteroid Backdrop", {
 
 Game.world.add("Asteroids", {    
     round: 0,
-    baseAsteroids: 4,
+    baseAsteroids: 6,
     asteroidsScale: 1,
     
     delayTime: 1000,
     delayDelta: 0,
 	
-	alienSpawnRate: 1,
+	alienSpawnRate: 0.05,
 	spawnRateScale: 0.01,
 	spawnDelta: 0,
 	
 	maxAliens: 1,
 	maxAliensScale: 0.5,
-    
-    debug: false,
-    
+        
     enter: function(lastState)
     {        
         this.add(Game.entity.create("Spaceship"));
@@ -925,7 +940,7 @@ Game.world.add("Asteroids", {
         
         Scoreboard.draw(ctx);
         
-        if(this.debug)
+        if(keys.g)
             Game.grid.debug.draw(ctx);
     },
     
