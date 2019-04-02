@@ -28,13 +28,18 @@ Game.entity.define("Spaceship", {
     turnSpeed: 360,
     rotation: 0,
     
-    fireRate: 6,
+    fireRate: 4,
     fireDelta: 0,
     
     killed: false,
     lives: 2,
+	maxLives: 4,
+	
     respawnTime: 2000,
     respawnTicks: 0,
+	
+	invincibilityTime: 1000,
+	invincibilityTicks: 0,
     
     pool: false,
                 
@@ -52,8 +57,8 @@ Game.entity.define("Spaceship", {
         this.h = polygon.h;
         
         this.reset();
-                
-        this.visible = true;
+		
+		this.nextLife = 10000;
     },
     
     reset: function()
@@ -141,6 +146,9 @@ Game.entity.define("Spaceship", {
     
     kill: function()
     {
+		if(this.invincibilityTicks > 0)
+			return;
+		
         this.killed = true;
         this.visible = false;
         this.noCollisionCheck = true;
@@ -181,8 +189,15 @@ Game.entity.define("Spaceship", {
     
     update: function(dt)
     {
+		let ms = 1000 * dt;
+		
+		if(this.invincibilityTicks > 0)
+		{			
+			this.invincibilityTicks = Math.max(this.invincibilityTicks - ms, 0);
+		}
+		
         if(this.killed)
-        {
+        {			
             if(this.respawnTicks > this.respawnTime)
             {                
                 if(Game.grid.search(this).length === 0)
@@ -192,10 +207,11 @@ Game.entity.define("Spaceship", {
                     this.noCollisionCheck = false;
                     
                     this.respawnTicks = 0;
+					this.invincibilityTicks = this.invincibilityTime;
                 }
             }
             else
-                this.respawnTicks += (1000 * dt);
+                this.respawnTicks += ms;
         }
         else
         {
@@ -207,7 +223,14 @@ Game.entity.define("Spaceship", {
                     this.shoot();
             }
             else
-                this.fireDelta += dt * 1000;
+                this.fireDelta += ms;
+			
+			if(Scoreboard.score >= this.nextLife)
+			{
+				this.lives = Math.min(this.lives + 1, this.maxLives);
+				
+				this.nextLife += 10000;
+			}
         }
     },
     
@@ -217,7 +240,10 @@ Game.entity.define("Spaceship", {
         ctx.lineWidth = 1;
         
         let position = this.position, w = this.w, h = this.h;
-                
+        
+		if(this.invincibilityTicks > 0 && this.invincibilityTicks % 200 < 100)
+			return;
+		
         ctx.beginPath();       
             this.polygon.draw(ctx, {stroke: true});
                 
@@ -613,13 +639,23 @@ function middleText(ctx, text, y)
     ctx.strokeText(text, stage.width / 2 - w / 2, y);
 }
 
-let scaleSpaceship = Game.polygon.create("Spaceship").scale(0.75, 0.75);
+let scaleSpaceship = Game.polygon.create("Spaceship").moveTo([10, 25]).scaleTo(0.75, 0.75);
 
 function drawLives(ctx)
 {
-	let lives = Game.world.current.get("Spaceship")[0].lives;
+	let current = Game.world.current, player = current && current.get("Spaceship")[0];
 	
-	scaleSpaceship.draw(ctx, {fill: true});
+	let lives = (player && player.lives + 1) || 0;
+	
+	let w = scaleSpaceship.w;
+	
+	ctx.save();
+	for(var i = 0; i < lives; i++)
+	{
+		scaleSpaceship.draw(ctx, {stroke: true});
+		scaleSpaceship.moveTo([i * (w + 5) + 10, 25]);
+	}
+	ctx.restore()
 }
 
 var Scoreboard = {
@@ -868,7 +904,7 @@ Game.world.add("Asteroid Backdrop", {
 Game.world.add("Asteroids", {    
     round: 0,
     baseAsteroids: 6,
-    asteroidsScale: 1,
+    asteroidsScale: 1.5,
     
     delayTime: 1000,
     delayDelta: 0,
@@ -891,7 +927,7 @@ Game.world.add("Asteroids", {
     
     nextRound: function()
     {
-        let l = this.baseAsteroids + this.round * this.asteroidsScale;
+        let l = this.baseAsteroids + Math.floor(this.round * this.asteroidsScale);
                         
         for(var i = 0; i < l; i++)
         {

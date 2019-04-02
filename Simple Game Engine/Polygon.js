@@ -103,7 +103,7 @@ Game.polygon = (function(){
         return this;
     };
 	
-	Polygon.prototype.scale = function(x, y)
+	Polygon.prototype.scaleTo = function(x, y)
 	{
 		let scale = this.scale;
 		
@@ -144,7 +144,9 @@ Game.polygon = (function(){
     
     Polygon.prototype.moveTo = function(p)
     {        
-        return this.move([p.x - this.anchorX, p.y - this.anchorY]);
+		let x = p.x != undefined ? p.x : p[0], y = p.y != undefined ? p.y : p[1];
+		
+        return this.move([x - this.anchorX, y - this.anchorY]);
     };
 
     Polygon.prototype.rotate = function(deg)
