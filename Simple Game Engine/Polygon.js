@@ -16,6 +16,7 @@ Game.polygon = (function(){
         }
         
         this.rotation = 0;
+		this.scale = [1, 1];
         this.rotationAnchor = [0.5, 0.5];
         
         this.recalcMinMax();
@@ -101,6 +102,28 @@ Game.polygon = (function(){
             
         return this;
     };
+	
+	Polygon.prototype.scale = function(x, y)
+	{
+		let scale = this.scale;
+		
+		if(scale[0] == x && scale[1] == y)
+			return;
+		
+		if(y == undefined)
+			y = x;
+		
+		this.points = this.map((point) => [point[0] * x, point[1] * y]);
+		
+		this.anchorX *= x;
+		this.anchorY *= y;
+		
+		this.recalcMinMax();
+		
+		this.scale = [x, y];
+		
+		return this;
+	};
 
     Polygon.prototype.move = function(v)
     {    
@@ -109,10 +132,7 @@ Game.polygon = (function(){
         if(x === 0 && y === 0)
             return this;
         
-        this.each((point) => {
-            point[0] += x;
-            point[1] += y;
-        });
+        this.points = this.map((point) => [point[0] + x, point[1] + y]);
         
         this.anchorX += x;
         this.anchorY += y;
@@ -265,6 +285,18 @@ Game.polygon = (function(){
         
         return true;
     };
+	
+	Polygon.prototype.map = function(callback)
+	{
+		let points = this.points, result = [];
+
+        for(var i = 0, l = points.length; i < l; i++)
+        {
+            result.push(callback(points[i], i));
+        }
+		
+		return result;
+	};
     
     Polygon.prototype.draw = function(ctx, options)
     {

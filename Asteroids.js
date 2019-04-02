@@ -613,6 +613,15 @@ function middleText(ctx, text, y)
     ctx.strokeText(text, stage.width / 2 - w / 2, y);
 }
 
+let scaleSpaceship = Game.polygon.create("Spaceship").scale(0.75, 0.75);
+
+function drawLives(ctx)
+{
+	let lives = Game.world.current.get("Spaceship")[0].lives;
+	
+	scaleSpaceship.draw(ctx, {fill: true});
+}
+
 var Scoreboard = {
     score: 0,
     highscore: 0,
@@ -934,6 +943,8 @@ Game.world.add("Asteroids", {
         ctx.fillRect(0, 0, stage.width, stage.height);
         
         Scoreboard.draw(ctx);
+		
+		drawLives(ctx);
         
         if(keys.g)
             Game.grid.debug.draw(ctx);
