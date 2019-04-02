@@ -3,7 +3,7 @@ var Game = window.Game || {};
 Game.loop = (function(){
     var lastTime, currentTime, delta = 0, tick;
     
-    var running = false, fps = 60, step = 1000 / 60, useFixedTimeStep = false, maxUpdates = 10;
+    var running = false, fps = 60, step = 1000 / 60, useFixedTimeStep = false, maxDelta = 10000;
     
     var updateFunc, drawFunc, currentState, ctx;
     
@@ -28,13 +28,13 @@ Game.loop = (function(){
         
         currentTime = getTime();
 
-        delta = Math.min(delta + (currentTime - lastTime), 1000);
+        delta = Math.min(delta + (currentTime - lastTime), maxDelta);
         
         if(useFixedTimeStep)
         {
             let updates = 0;
 
-            while(delta >= step && updates < maxUpdates)
+            while(delta >= step)
             {
                 frameUpdate(step / 1000);
 
