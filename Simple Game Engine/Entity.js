@@ -46,8 +46,8 @@ Game.entity = (function(){
                 return {
                     x: x,
                     y: y,
-                    w: w,
-                    h: h
+                    w: w || 0,
+                    h: h || 0
                 };
             }
         });

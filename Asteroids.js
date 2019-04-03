@@ -31,10 +31,11 @@ Game.entity.define("Spaceship", {
     fireRate: 4,
     fireDelta: 0,
     
-    killed: false,
     lives: 2,
 	maxLives: 4,
+	nextLife: 5000,
 	
+	killed: false,
     respawnTime: 2000,
     respawnTicks: 0,
 	
@@ -58,7 +59,7 @@ Game.entity.define("Spaceship", {
         
         this.reset();
 		
-		this.nextLife = 10000;
+		this.nextLifePoints = this.nextLife;
     },
     
     reset: function()
@@ -225,11 +226,11 @@ Game.entity.define("Spaceship", {
             else
                 this.fireDelta += ms;
 			
-			if(Scoreboard.score >= this.nextLife)
+			if(Scoreboard.score >= this.nextLifePoints)
 			{
 				this.lives = Math.min(this.lives + 1, this.maxLives);
 				
-				this.nextLife += 10000;
+				this.nextLifePoints += this.nextLife;
 			}
         }
     },
@@ -404,10 +405,11 @@ Game.entity.define("Asteroid", {
     {        
         if(e.is("Bullet") && this.polygon.containsPoint(e.position))
         {
+			let points = this.size == "LARGE" ? 100 : this.size == "MEDIUM" ? 75 : 50;
+            Scoreboard.increment(points);
+			
             e.destroy();
             this.breakApart();
-            
-            Scoreboard.increment(100);
         }
 		else if(e.is("Alien") && this.polygon.overlapsRect(e.rect))
 		{
@@ -493,7 +495,6 @@ Game.entity.define("Alien", {
         let position = this.position;
         
         position.set(Game.vector(Game.random.item([-this.w, stage.width]), Game.random(stage.height - this.h)));
-        // position.set(Game.vector(stage.width / 2 - this.w / 2, stage.height / 2 - this.h / 2));
         
         if(position.x == -this.w)
             this.horizontalDirection = 1;
@@ -559,10 +560,10 @@ Game.entity.define("Alien", {
 	{
 		if(e.is("Bullet") && this.polygon.pointInBounds(e.position))
 		{
+			this.world.add(Game.entity.create("Score Text", 500, this.position.clone()));
+			
 			e.destroy();
 			this.destroy();
-			
-			Scoreboard.increment(500);
 		}
 	},
     
@@ -627,6 +628,34 @@ Game.entity.extend("Bullet", "Alien Bullet", {
 	}
 });
 
+Game.entity.define("Score Text", {	
+	constructor: function(points, position)
+	{
+		this.text = points;
+		this.position = position;
+		
+		Scoreboard.increment(points);
+		
+		this.lifeSpan = 700;
+	},
+	
+	update: function(dt)
+	{
+		if(this.lifeSpan <= 0)
+			this.destroy();
+		else
+			this.lifeSpan -= 1000 * dt;
+	},
+	
+	draw: function(ctx)
+	{		
+		ctx.fillStyle = "white";
+		ctx.font = "10px Garamond";
+		
+		ctx.fillText(this.text, this.position.x, this.position.y);
+	}
+});
+
 function measure(ctx, text)
 {
     return ctx.measureText(text).width;
@@ -645,12 +674,12 @@ function drawLives(ctx)
 {
 	let current = Game.world.current, player = current && current.get("Spaceship")[0];
 	
-	let lives = (player && player.lives + 1) || 0;
+	let lives = (player && player.lives) || 0;
 	
 	let w = scaleSpaceship.w;
 	
 	ctx.save();
-	for(var i = 0; i < lives; i++)
+	for(var i = 0, l = lives; i < l; i++)
 	{
 		scaleSpaceship.draw(ctx, {stroke: true});
 		scaleSpaceship.moveTo([i * (w + 5) + 10, 25]);
@@ -756,6 +785,11 @@ Game.state.add("Start Screen", {
     
     enter: function()
     {
+		if(window.localStorage)
+		{
+			Scoreboard.highscore = parseInt(localStorage.getItem("highscore")) || Scoreboard.highscore;
+		}
+		
         Game.world.enter("Asteroid Backdrop");
     },
     
@@ -844,6 +878,9 @@ Game.state.add("Game Over Screen", {
             player.destroy();
         
         Scoreboard.flashHighscore();
+		
+		if(window.localStorage)
+			localStorage.setItem("highscore", Scoreboard.highscore);
 		
 		Game.world.current.noCollision = true;
     },
